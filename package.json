@@ -1,0 +1,24 @@
+{
+	"name": "vrchat-api",
+	"version": "0.0.1",
+	"api_version": "1.0.0",
+	"description": "VRChat API",
+	"keywords": [],
+	"manufacturer": "VRChat Inc",
+	"product": "VRChat API",
+	"shortname": "vrchat",
+	"homepage": "https://github.com/McHauge/companion-module-vrchat-api#readme",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/McHauge/companion-module-vrchat-api.git"
+	},
+	"author": "Andreas H. Thomsen <mc-hauge@hotmail.com>",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/McHauge/companion-module-vrchat-api/issues"
+	}
+}
