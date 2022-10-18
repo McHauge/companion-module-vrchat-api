@@ -4,7 +4,7 @@
 	"api_version": "1.0.0",
 	"description": "VRChat API",
 	"keywords": [],
-	"manufacturer": "VRChat Inc.",
+	"manufacturer": "VRChat Inc",
 	"product": "API 1.0",
 	"shortname": "vrchat",
 	"homepage": "https://github.com/McHauge/companion-module-vrchat-api#readme",
