@@ -16,16 +16,19 @@ exports.updateVariableDefinitions = function () {
 		{ label: `Ins Name`, name: `ins_name` },
 		{ label: `Ins Short Name`, name: `ins_shortName` },
 		{ label: `Ins Owner ID`, name: `ins_ownerId` },
-		{ label: `Ins capacity`, name: `ins_capacity` },
-		{ label: `Ins occupants`, name: `ins_occupants` },
-		{ label: `Ins full`, name: `ins_full` },
-		{ label: `Ins region`, name: `ins_region` }
-		// { label: `World ID`, name: `wor_id` },
-		// { label: `World Name`, name: `wor_name` },
-		// { label: `World Description`, name: `wor_description` },
-		// { label: `World authorId`, name: `wor_authorId` },
-		// { label: `World authorName`, name: `wor_authorName` },
-		// { label: `World releaseStatus`, name: `wor_releaseStatus` }
+		{ label: `Ins Capacity`, name: `ins_capacity` },
+		{ label: `Ins Occupants`, name: `ins_occupants` },
+		{ label: `Ins Full`, name: `ins_full` },
+		{ label: `Ins Region`, name: `ins_region` },
+		{ label: `World Name`, name: `wor_name` },
+		{ label: `World Description`, name: `wor_description` },
+		{ label: `World Author Id`, name: `wor_authorId` },
+		{ label: `World Author Name`, name: `wor_authorName` },
+		{ label: `World Release Status`, name: `wor_releaseStatus` },
+		{ label: `World Visits`, name: `wor_visits` },
+		{ label: `World Occupants`, name: `wor_occupants` },
+		{ label: `World Public Occupants`, name: `wor_publicOccupants` },
+		{ label: `World Private Occupants`, name: `wor_privateOccupants` }
 	)
 
 	this.setVariableDefinitions(variables)
@@ -36,7 +39,7 @@ exports.updateVariables = function () {
 	let d = this.data
 	let u = d.user
 	let i = d.instance
-	let w = d.instance.world
+	let w = d.world
 
 	this.setVariable(`onlineUsers`, d.onlineUsers)
 	this.setVariable(`user_displayName`, u.displayName)
@@ -56,10 +59,13 @@ exports.updateVariables = function () {
 	this.setVariable(`ins_occupants`, i.occupants)
 	this.setVariable(`ins_full`, i.full)
 	this.setVariable(`ins_region`, i.region)
-	// this.setVariable(`wor_id`, w.id)
-	// this.setVariable(`wor_name`, w.name)
-	// this.setVariable(`wor_description`, w.description)
-	// this.setVariable(`wor_authorId`, w.authorId)
-	// this.setVariable(`wor_authorName`, w.authorName)
-	// this.setVariable(`wor_releaseStatus`, w.releaseStatus)
+	this.setVariable(`wor_name`, w.name)
+	this.setVariable(`wor_description`, w.description)
+	this.setVariable(`wor_authorId`, w.authorId)
+	this.setVariable(`wor_authorName`, w.authorName)
+	this.setVariable(`wor_releaseStatus`, w.releaseStatus)
+	this.setVariable(`wor_visits`, w.visits)
+	this.setVariable(`wor_occupants`, w.occupants)
+	this.setVariable(`wor_publicOccupants`, w.publicOccupants)
+	this.setVariable(`wor_privateOccupants`, w.privateOccupants)
 }

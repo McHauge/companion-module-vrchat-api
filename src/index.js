@@ -36,14 +36,18 @@ class instance extends instance_skel {
 				occupants: 0,
 				full: false,
 				region: 'NaN',
-				// world: {
-				// 	id: 'NaN',
-				// 	name: 'NaN',
-				// 	description: 'NaN',
-				// 	authorId: 'NaN',
-				// 	authorName: 'NaN',
-				// 	releaseStatus: 'NaN',
-				// },
+			},
+			world: {
+				id: 'NaN',
+				name: 'NaN',
+				description: 'NaN',
+				authorId: 'NaN',
+				authorName: 'NaN',
+				releaseStatus: 'NaN',
+				visits: 0,
+				publicOccupants: 0,
+				privateOccupants: 0,
+				occupants: 0,
 			},
 		}
 
@@ -59,6 +63,7 @@ class instance extends instance_skel {
 		this.NotificationsApi = new vrchat.NotificationsApi(this.configuration)
 		this.InviteApi = new vrchat.InviteApi(this.configuration)
 		this.InstancesApi = new vrchat.InstancesApi(this.configuration)
+		this.WorldsApi = new vrchat.WorldsApi(this.configuration)
 
 		// Custom Variables Handling
 		this.customVariables = {}
@@ -92,11 +97,11 @@ class instance extends instance_skel {
 	async login(data, configuration) {
 		let resp_Login = await this.AuthenticationApi.getCurrentUser(configuration).catch((err) => {
 			this.log('error', err.message)
+			console.log(err)
 		})
 		data.user.name = resp_Login.data.username
 		data.user.displayName = resp_Login.data.displayName
 		data.user.id = resp_Login.data.id
-		data.user.state = resp_Login.data.state
 		data.user.status = resp_Login.data.status
 		data.user.statusDescription = resp_Login.data.statusDescription
 
@@ -106,6 +111,7 @@ class instance extends instance_skel {
 	async getCurrentOnlineUsers(data, configuration) {
 		let resp_UserCount = await this.SystemApi.getCurrentOnlineUsers(configuration.apiKey).catch((err) => {
 			this.log('error', err.message)
+			console.log(err)
 		})
 		data.onlineUsers = resp_UserCount.data
 		this.log('info', `Online Users: ${data.onlineUsers}`)
@@ -115,16 +121,20 @@ class instance extends instance_skel {
 	async getCurrentInstanceID(data) {
 		let resp_User = await this.UsersApi.getUserByName(data.user.name).catch((err) => {
 			this.log('error', err.message)
+			console.log(err)
 		})
+		data.user.state = resp_User.data.state
 		data.instance.worldId = resp_User.data.worldId
 		data.instance.instanceId = resp_User.data.instanceId
 		return data
 	}
 
 	async getInstanceInfo(data) {
+		if (data.instance.worldId == 'NaN' || data.instance.instanceId == 'NaN') {return data}
 		let resp_Instance = await this.InstancesApi.getInstance(data.instance.worldId, data.instance.instanceId).catch(
 			(err) => {
 				this.log('error', err.message)
+				console.log(err)
 			}
 		)
 		// console.log(resp_Instance.data)
@@ -141,14 +151,30 @@ class instance extends instance_skel {
 			occupants: d.n_users,
 			full: d.full,
 			region: d.region,
-			// world: {
-			// 	id: d.world.id,
-			// 	name: d.world.name,
-			// 	description: d.world.description,
-			// 	authorId: d.world.authorId,
-			// 	authorName: d.world.authorName,
-			// 	releaseStatus: d.world.releaseStatus,
-			// },
+		}
+
+		return data
+	}
+
+	async getWorldInfo(data) {
+		if (data.user.state === 'offline') {return data}
+		let resp_World = await this.WorldsApi.getWorld(data.instance.worldId).catch((err) => {
+			this.log('error', err.message)
+			console.log(err)
+		})
+		// console.log(resp_World.data)
+		let d = resp_World.data
+		data.world = {
+			id: d.id,
+			name: d.name,
+			description: d.description,
+			authorId: d.authorId,
+			authorName: d.authorName,
+			releaseStatus: d.releaseStatus,
+			visits: d.visits,
+			publicOccupants: d.publicOccupants,
+			privateOccupants: d.privateOccupants,
+			occupants: d.occupants,
 		}
 
 		return data
@@ -157,7 +183,9 @@ class instance extends instance_skel {
 	async getUserByName(UserName) {
 		let resp_User = await this.UsersApi.getUserByName(UserName).catch((err) => {
 			this.log('error', err.message)
+			console.log(err)
 		})
+		this.data.user.state = resp_User.data.state
 		return resp_User.data
 	}
 
@@ -170,9 +198,10 @@ class instance extends instance_skel {
 
 		if (this.config.username != '' && this.config.password != '' && this.config.apiKey != '') {
 			this.data = await this.login(this.data, this.configuration)
-			this.data = await this.getCurrentInstanceID(this.data)
 			this.data = await this.getCurrentOnlineUsers(this.data, this.configuration)
+			this.data = await this.getCurrentInstanceID(this.data)
 			this.data = await this.getInstanceInfo(this.data)
+			this.data = await this.getWorldInfo(this.data)
 			this.status(this.STATE_OK)
 			this.updateVariables()
 			this.log('info', 'Logged in as ' + this.data.user.name)
@@ -422,6 +451,9 @@ class instance extends instance_skel {
 			GetCurentUserInfo: {
 				label: 'Pull Current User Info',
 			},
+			GetCurentWorldInfo: {
+				label: 'Pull Current World Info',
+			},
 		})
 	}
 
@@ -643,11 +675,18 @@ class instance extends instance_skel {
 				this.data = await this.getCurrentOnlineUsers(this.data, this.configuration)
 				break
 			case 'GetInstanceInfo':
+				this.data = await this.getCurrentInstanceID(this.data)
 				this.data = await this.getInstanceInfo(this.data)
 				this.log('info', 'Pulled Instance Info')
 				break
 			case 'GetCurentUserInfo':
 				this.data = await this.login(this.data, this.configuration)
+				this.data = await this.getCurrentInstanceID(this.data)
+				this.log('info', 'Pulled Current User Info')
+				break
+			case 'GetCurentWorldInfo':
+				this.data = await this.login(this.data, this.configuration)
+				this.data = await this.getWorldInfo(this.data)
 				this.log('info', 'Pulled Current User Info')
 				break
 		}
