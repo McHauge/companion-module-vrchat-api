@@ -496,14 +496,13 @@ class instance extends instance_skel {
 								this.InviteApi.inviteUser(notification.senderUserId, instanceMessage)
 									.then((resp) => {
 										this.debug(resp.data)
-										this.NotificationsApi.deleteNotification(notification.id)
+										this.log('info', 'Accepted Join Request From: ' + notification.senderUsername)
+										this.NotificationsApi.deleteNotification(notification.id) // Might not be needed
 											.then((resp) => {
 												this.debug(resp.data)
-												this.log('info', 'Accepted Join Request From: ' + notification.senderUsername)
 											})
 											.catch((err) => {
-												this.log('error', err.message)
-												console.log(err)
+												this.debug(err.message)
 											})
 									})
 									.catch((err) => {
@@ -526,14 +525,13 @@ class instance extends instance_skel {
 									this.NotificationsApi.acceptFriendRequest(notification.id)
 										.then((resp) => {
 											this.debug(resp.data)
-											this.NotificationsApi.deleteNotification(notification.id)
+											this.log('info', 'Accepted Friend Request From: ' + notification.senderUsername)
+											this.NotificationsApi.deleteNotification(notification.id) // Might not be needed
 												.then((resp) => {
 													this.debug(resp.data)
-													this.log('info', 'Accepted Friend Request From: ' + notification.senderUsername)
 												})
 												.catch((err) => {
-													this.log('error', err.message)
-													console.log(err)
+													this.debug(err.message)
 												})
 										})
 										.catch((err) => {
@@ -546,14 +544,13 @@ class instance extends instance_skel {
 							this.NotificationsApi.acceptFriendRequest(opt.notificationID)
 								.then((resp) => {
 									this.debug(resp.data)
-									this.NotificationsApi.deleteNotification(opt.notificationID)
+									this.log('info', 'Accepted Friend Request From: ' + notification.senderUsername)
+									this.NotificationsApi.deleteNotification(opt.notificationID) // Might not be needed
 										.then((resp) => {
 											this.debug(resp.data)
-											this.log('info', 'Accepted Friend Request From: ' + notification.senderUsername)
 										})
 										.catch((err) => {
-											this.log('error', err.message)
-											console.log(err)
+											this.debug(err.message)
 										})
 								})
 								.catch((err) => {
