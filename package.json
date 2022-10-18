@@ -1,14 +1,14 @@
 {
 	"name": "vrchat-api",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"api_version": "1.0.0",
 	"description": "VRChat API",
 	"keywords": [],
-	"manufacturer": "VRChat Inc",
-	"product": "VRChat API",
+	"manufacturer": "VRChat Inc.",
+	"product": "API 1.0",
 	"shortname": "vrchat",
 	"homepage": "https://github.com/McHauge/companion-module-vrchat-api#readme",
-	"main": "index.js",
+	"main": "src/index.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
@@ -20,5 +20,8 @@
 	"license": "MIT",
 	"bugs": {
 		"url": "https://github.com/McHauge/companion-module-vrchat-api/issues"
+	},
+	"dependencies": {
+		"vrchat": "^1.7.7"
 	}
 }
