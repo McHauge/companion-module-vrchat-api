@@ -108,6 +108,7 @@ class instance extends instance_skel {
 			this.log('error', err.message)
 		})
 		data.onlineUsers = resp_UserCount.data
+		this.log('info', `Online Users: ${data.onlineUsers}`)
 		return data
 	}
 
@@ -174,6 +175,7 @@ class instance extends instance_skel {
 			this.data = await this.getInstanceInfo(this.data)
 			this.status(this.STATE_OK)
 			this.updateVariables()
+			this.log('info', 'Logged in as ' + this.data.user.name)
 			console.log(this.data)
 		} else {
 			this.log('error', 'Username, Password or API Key is missing')
@@ -432,6 +434,7 @@ class instance extends instance_skel {
 				this.NotificationsApi.getNotifications(undefined, undefined, undefined, undefined, opt.maxNotifications)
 					.then((resp) => {
 						console.log(resp.data)
+						this.log('info', 'Pulled Notifications, check console for details')
 					})
 					.catch((err) => {
 						this.log('error', err.message)
@@ -441,6 +444,7 @@ class instance extends instance_skel {
 				this.NotificationsApi.clearNotifications()
 					.then((resp) => {
 						this.debug(resp.data)
+						this.log('info', 'All Notifications Cleared')
 					})
 					.catch((err) => {
 						this.log('error', err.message)
@@ -467,6 +471,7 @@ class instance extends instance_skel {
 				this.InviteApi.inviteUser(user, instanceMessage)
 					.then((resp) => {
 						this.debug(resp.data)
+						this.log('info', 'Invite Sent to ' + user)
 					})
 					.catch((err) => {
 						this.log('error', err.message)
@@ -494,6 +499,7 @@ class instance extends instance_skel {
 										this.NotificationsApi.deleteNotification(notification.id)
 											.then((resp) => {
 												this.debug(resp.data)
+												this.log('info', 'Accepted Join Request From: ' + notification.senderUsername)
 											})
 											.catch((err) => {
 												this.log('error', err.message)
@@ -521,6 +527,7 @@ class instance extends instance_skel {
 											this.NotificationsApi.deleteNotification(notification.id)
 												.then((resp) => {
 													this.debug(resp.data)
+													this.log('info', 'Accepted Friend Request From: ' + notification.senderUsername)
 												})
 												.catch((err) => {
 													this.log('error', err.message)
@@ -538,6 +545,7 @@ class instance extends instance_skel {
 									this.NotificationsApi.deleteNotification(opt.notificationID)
 										.then((resp) => {
 											this.debug(resp.data)
+											this.log('info', 'Accepted Friend Request From: ' + notification.senderUsername)
 										})
 										.catch((err) => {
 											this.log('error', err.message)
@@ -560,6 +568,7 @@ class instance extends instance_skel {
 					.catch((err) => {
 						this.log('error', err.message)
 					})
+				this.log('info', 'Status updated to: ' + opt.cmd)
 				break
 			case 'UpdateStatusDescription':
 				this.UsersApi.updateUser(this.data.user.id, { statusDescription: opt.cmd })
@@ -569,6 +578,7 @@ class instance extends instance_skel {
 					.catch((err) => {
 						this.log('error', err.message)
 					})
+				this.log('info', 'Status description updated to: ' + opt.cmd)
 				break
 			case 'UpdateBio':
 				this.UsersApi.updateUser(this.data.user.id, '{ "bio": "' + opt.cmd + '" }')
@@ -579,6 +589,7 @@ class instance extends instance_skel {
 					.catch((err) => {
 						this.log('error', err.message)
 					})
+				this.log('info', 'Updating bio to: ' + opt.cmd)
 				break
 			case 'UpdateBioLinks':
 				this.UsersApi.updateUser(
@@ -593,15 +604,18 @@ class instance extends instance_skel {
 						console.log(resp.data)
 						this.log('error', err.message)
 					})
+				this.log('info', 'Bio Links Updated to: ' + opt.link1 + ', ' + opt.link2 + ', ' + opt.link3)
 				break
 			case 'TotalUsersOnline':
 				this.data = await this.getCurrentOnlineUsers(this.data, this.configuration)
 				break
 			case 'GetInstanceInfo':
 				this.data = await this.getInstanceInfo(this.data)
+				this.log('info', 'Pulled Instance Info')
 				break
 			case 'GetCurentUserInfo':
 				this.data = await this.login(this.data, this.configuration)
+				this.log('info', 'Pulled Current User Info')
 				break
 		}
 
