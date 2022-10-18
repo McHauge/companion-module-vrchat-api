@@ -503,10 +503,12 @@ class instance extends instance_skel {
 											})
 											.catch((err) => {
 												this.log('error', err.message)
+												console.log(err)
 											})
 									})
 									.catch((err) => {
 										this.log('error', err.message)
+										console.log(err)
 									})
 							}
 						})
@@ -531,10 +533,12 @@ class instance extends instance_skel {
 												})
 												.catch((err) => {
 													this.log('error', err.message)
+													console.log(err)
 												})
 										})
 										.catch((err) => {
 											this.log('error', err.message)
+											console.log(err)
 										})
 								}
 							})
@@ -549,10 +553,12 @@ class instance extends instance_skel {
 										})
 										.catch((err) => {
 											this.log('error', err.message)
+											console.log(err)
 										})
 								})
 								.catch((err) => {
 									this.log('error', err.message)
+									console.log(err)
 								})
 						}
 					})
@@ -564,6 +570,14 @@ class instance extends instance_skel {
 				this.UsersApi.updateUser(this.data.user.id, { status: opt.cmd })
 					.then((resp) => {
 						this.debug(resp.data)
+
+						this.data.user.name = resp.data.username
+						this.data.user.displayName = resp.data.displayName
+						this.data.user.id = resp.data.id
+						this.data.user.state = resp.data.state
+						this.data.user.status = resp.data.status
+						this.data.user.statusDescription = resp.data.statusDescription
+						this.updateVariables()
 					})
 					.catch((err) => {
 						this.log('error', err.message)
@@ -574,6 +588,14 @@ class instance extends instance_skel {
 				this.UsersApi.updateUser(this.data.user.id, { statusDescription: opt.cmd })
 					.then((resp) => {
 						this.debug(resp.data)
+
+						this.data.user.name = resp.data.username
+						this.data.user.displayName = resp.data.displayName
+						this.data.user.id = resp.data.id
+						this.data.user.state = resp.data.state
+						this.data.user.status = resp.data.status
+						this.data.user.statusDescription = resp.data.statusDescription
+						this.updateVariables()
 					})
 					.catch((err) => {
 						this.log('error', err.message)
@@ -583,8 +605,15 @@ class instance extends instance_skel {
 			case 'UpdateBio':
 				this.UsersApi.updateUser(this.data.user.id, '{ "bio": "' + opt.cmd + '" }')
 					.then((resp) => {
-						console.log(resp.data)
 						this.debug(resp.data)
+
+						this.data.user.name = resp.data.username
+						this.data.user.displayName = resp.data.displayName
+						this.data.user.id = resp.data.id
+						this.data.user.state = resp.data.state
+						this.data.user.status = resp.data.status
+						this.data.user.statusDescription = resp.data.statusDescription
+						this.updateVariables()
 					})
 					.catch((err) => {
 						this.log('error', err.message)
@@ -597,8 +626,15 @@ class instance extends instance_skel {
 					'{ "bioLinks": ["' + opt.link1 + '","' + opt.link2 + '","' + opt.link3 + '"] }'
 				)
 					.then((resp) => {
-						console.log(resp.data)
 						this.debug(resp.data)
+
+						this.data.user.name = resp.data.username
+						this.data.user.displayName = resp.data.displayName
+						this.data.user.id = resp.data.id
+						this.data.user.state = resp.data.state
+						this.data.user.status = resp.data.status
+						this.data.user.statusDescription = resp.data.statusDescription
+						this.updateVariables()
 					})
 					.catch((err) => {
 						console.log(resp.data)
