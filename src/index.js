@@ -130,7 +130,7 @@ class instance extends instance_skel {
 	}
 
 	async getInstanceInfo(data) {
-		if (data.instance.worldId == 'NaN' || data.instance.instanceId == 'NaN') {return data}
+		if (data.instance.worldId == 'NaN' || data.instance.instanceId == 'NaN' || data.instance.worldId === 'offline' || data.instance.instanceId == 'offline') {return data}
 		let resp_Instance = await this.InstancesApi.getInstance(data.instance.worldId, data.instance.instanceId).catch(
 			(err) => {
 				this.log('error', err.message)
@@ -157,7 +157,9 @@ class instance extends instance_skel {
 	}
 
 	async getWorldInfo(data) {
-		if (data.user.state === 'offline') {return data}
+		if (data.user.state === 'offline' || data.instance.worldId == 'offline') {
+			return data
+		}
 		let resp_World = await this.WorldsApi.getWorld(data.instance.worldId).catch((err) => {
 			this.log('error', err.message)
 			console.log(err)
