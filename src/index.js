@@ -119,7 +119,7 @@ class instance extends instance_skel {
 	}
 
 	async getCurrentInstanceID(data) {
-		let resp_User = await this.UsersApi.getUserByName(data.user.name).catch((err) => {
+		let resp_User = await this.UsersApi.getUser(data.user.id).catch((err) => {
 			this.log('error', err.message)
 			console.log(err)
 		})
@@ -130,7 +130,14 @@ class instance extends instance_skel {
 	}
 
 	async getInstanceInfo(data) {
-		if (data.instance.worldId == 'NaN' || data.instance.instanceId == 'NaN' || data.instance.worldId === 'offline' || data.instance.instanceId == 'offline') {return data}
+		if (
+			data.instance.worldId == 'NaN' ||
+			data.instance.instanceId == 'NaN' ||
+			data.instance.worldId === 'offline' ||
+			data.instance.instanceId == 'offline'
+		) {
+			return data
+		}
 		let resp_Instance = await this.InstancesApi.getInstance(data.instance.worldId, data.instance.instanceId).catch(
 			(err) => {
 				this.log('error', err.message)
@@ -182,14 +189,15 @@ class instance extends instance_skel {
 		return data
 	}
 
-	async getUserByName(UserName) {
-		let resp_User = await this.UsersApi.getUserByName(UserName).catch((err) => {
-			this.log('error', err.message)
-			console.log(err)
-		})
-		this.data.user.state = resp_User.data.state
-		return resp_User.data
-	}
+	// Depricated in the API:
+	// async getUserByName(UserName) {
+	// 	let resp_User = await this.UsersApi.getUserByName(UserName).catch((err) => {
+	// 		this.log('error', err.message)
+	// 		console.log(err)
+	// 	})
+	// 	this.data.user.state = resp_User.data.state
+	// 	return resp_User.data
+	// }
 
 	async init() {
 		this.status(1, 'Connecting')
@@ -288,7 +296,7 @@ class instance extends instance_skel {
 					{
 						type: 'textinput',
 						id: 'userId',
-						label: 'User ID OR Username',
+						label: 'User ID Only (usr_)',
 						default: '',
 					},
 					{
@@ -498,8 +506,13 @@ class instance extends instance_skel {
 
 				let user = opt.userId
 				if (!user.includes('usr_')) {
-					let raw_user = await this.getUserByName(user)
-					user = raw_user.id
+					this.log.error('User ID must start with "usr_"')
+					console.log('User ID must start with "usr_"')
+					return
+
+					// Depricated:
+					// let raw_user = await this.getUserByName(user)
+					// user = raw_user.id
 				}
 
 				this.InviteApi.inviteUser(user, instanceMessage)
