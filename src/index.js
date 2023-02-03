@@ -283,7 +283,7 @@ class instance extends instance_skel {
 						id: 'maxNotifications',
 						default: 100,
 						min: 1,
-						max: 100,
+						max: 1000,
 					},
 				],
 			},
@@ -473,14 +473,20 @@ class instance extends instance_skel {
 
 		switch (action.action) {
 			case 'GetNotifications':
-				this.NotificationsApi.getNotifications(undefined, undefined, undefined, undefined, opt.maxNotifications)
-					.then((resp) => {
-						console.log(resp.data)
-						this.log('info', 'Pulled Notifications, check console for details')
-					})
-					.catch((err) => {
-						this.log('error', err.message)
-					})
+				for (let i = 0; i < opt.maxNotifications; i += 100) {
+					this.NotificationsApi.getNotifications(undefined, undefined, undefined, undefined, 100, i)
+						.then((resp) => {
+							console.log(resp.data)
+							this.log('info', 'Pulled Notifications, check console for details')
+						})
+						.catch((err) => {
+							this.log('error', err.message)
+						})
+
+					if (resp.data.length < 100) {
+						break
+					}
+				}
 				break
 			case 'ClearAllNotifications':
 				this.NotificationsApi.clearNotifications()
@@ -536,43 +542,15 @@ class instance extends instance_skel {
 					}
 				}
 
-				this.NotificationsApi.getNotifications(undefined, undefined, undefined, undefined, opt.maxNotifications)
-					.then((resp) => {
-						resp.data.forEach((notification) => {
-							if (notification.type === vrchat.NotificationType.RequestInvite) {
-								this.InviteApi.inviteUser(notification.senderUserId, instanceMessage)
-									.then((resp) => {
-										this.debug(resp.data)
-										this.log('info', 'Accepted Join Request From: ' + notification.senderUsername)
-										this.NotificationsApi.deleteNotification(notification.id) // Might not be needed
-											.then((resp) => {
-												this.debug(resp.data)
-											})
-											.catch((err) => {
-												this.debug(err.message)
-											})
-									})
-									.catch((err) => {
-										this.log('error', err.message)
-										console.log(err)
-									})
-							}
-						})
-					})
-					.catch((err) => {
-						this.log('error', err.message)
-					})
-				break
-			case 'AcceptAllFriendRequests':
-				this.NotificationsApi.getNotifications(undefined, undefined, undefined, undefined, opt.maxNotifications)
-					.then((resp) => {
-						if (opt.cmd === 'all') {
+				for (let i = 0; i < opt.maxNotifications; i += 100) {
+					this.NotificationsApi.getNotifications(undefined, undefined, undefined, undefined, 100, i)
+						.then((resp) => {
 							resp.data.forEach((notification) => {
-								if (notification.type === vrchat.NotificationType.FriendRequest) {
-									this.NotificationsApi.acceptFriendRequest(notification.id)
+								if (notification.type === vrchat.NotificationType.RequestInvite) {
+									this.InviteApi.inviteUser(notification.senderUserId, instanceMessage)
 										.then((resp) => {
 											this.debug(resp.data)
-											this.log('info', 'Accepted Friend Request From: ' + notification.senderUsername)
+											this.log('info', 'Accepted Join Request From: ' + notification.senderUsername)
 											this.NotificationsApi.deleteNotification(notification.id) // Might not be needed
 												.then((resp) => {
 													this.debug(resp.data)
@@ -587,28 +565,60 @@ class instance extends instance_skel {
 										})
 								}
 							})
-						} else if (opt.cmd === 'specific') {
-							this.NotificationsApi.acceptFriendRequest(opt.notificationID)
-								.then((resp) => {
-									this.debug(resp.data)
-									this.log('info', 'Accepted Friend Request From: ' + notification.senderUsername)
-									this.NotificationsApi.deleteNotification(opt.notificationID) // Might not be needed
-										.then((resp) => {
-											this.debug(resp.data)
-										})
-										.catch((err) => {
-											this.debug(err.message)
-										})
+						})
+						.catch((err) => {
+							this.log('error', err.message)
+						})
+				}
+				break
+			case 'AcceptAllFriendRequests':
+				for (let i = 0; i < opt.maxNotifications; i += 100) {
+					this.NotificationsApi.getNotifications(undefined, undefined, undefined, undefined, 100, i)
+						.then((resp) => {
+							if (opt.cmd === 'all') {
+								resp.data.forEach((notification) => {
+									if (notification.type === vrchat.NotificationType.FriendRequest) {
+										this.NotificationsApi.acceptFriendRequest(notification.id)
+											.then((resp) => {
+												this.debug(resp.data)
+												this.log('info', 'Accepted Friend Request From: ' + notification.senderUsername)
+												this.NotificationsApi.deleteNotification(notification.id) // Might not be needed
+													.then((resp) => {
+														this.debug(resp.data)
+													})
+													.catch((err) => {
+														this.debug(err.message)
+													})
+											})
+											.catch((err) => {
+												this.log('error', err.message)
+												console.log(err)
+											})
+									}
 								})
-								.catch((err) => {
-									this.log('error', err.message)
-									console.log(err)
-								})
-						}
-					})
-					.catch((err) => {
-						this.log('error', err.message)
-					})
+							} else if (opt.cmd === 'specific') {
+								this.NotificationsApi.acceptFriendRequest(opt.notificationID)
+									.then((resp) => {
+										this.debug(resp.data)
+										this.log('info', 'Accepted Friend Request From: ' + notification.senderUsername)
+										this.NotificationsApi.deleteNotification(opt.notificationID) // Might not be needed
+											.then((resp) => {
+												this.debug(resp.data)
+											})
+											.catch((err) => {
+												this.debug(err.message)
+											})
+									})
+									.catch((err) => {
+										this.log('error', err.message)
+										console.log(err)
+									})
+							}
+						})
+						.catch((err) => {
+							this.log('error', err.message)
+						})
+				}
 				break
 			case 'UpdateStatus':
 				this.UsersApi.updateUser(this.data.user.id, { status: opt.cmd })
