@@ -57,14 +57,6 @@ class instance extends instance_skel {
 			apiKey: this.config.apiKey,
 		})
 
-		this.AuthenticationApi = new vrchat.AuthenticationApi(this.configuration)
-		this.UsersApi = new vrchat.UsersApi(this.configuration)
-		this.SystemApi = new vrchat.SystemApi(this.configuration)
-		this.NotificationsApi = new vrchat.NotificationsApi(this.configuration)
-		this.InviteApi = new vrchat.InviteApi(this.configuration)
-		this.InstancesApi = new vrchat.InstancesApi(this.configuration)
-		this.WorldsApi = new vrchat.WorldsApi(this.configuration)
-
 		// Custom Variables Handling
 		this.customVariables = {}
 		system.emit('custom_variables_get', this.updateCustomVariables)
@@ -205,6 +197,14 @@ class instance extends instance_skel {
 		// this.init_feedbacks()
 		// initPresets.bind(this)()
 		this.updateVariableDefinitions()
+
+		this.AuthenticationApi = new vrchat.AuthenticationApi(this.configuration)
+		this.UsersApi = new vrchat.UsersApi(this.configuration)
+		this.SystemApi = new vrchat.SystemApi(this.configuration)
+		this.NotificationsApi = new vrchat.NotificationsApi(this.configuration)
+		this.InviteApi = new vrchat.InviteApi(this.configuration)
+		this.InstancesApi = new vrchat.InstancesApi(this.configuration)
+		this.WorldsApi = new vrchat.WorldsApi(this.configuration)
 
 		if (this.config.username != '' && this.config.password != '' && this.config.apiKey != '') {
 			this.data = await this.login(this.data, this.configuration)
