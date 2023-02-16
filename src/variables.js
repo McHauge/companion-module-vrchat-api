@@ -28,7 +28,12 @@ exports.updateVariableDefinitions = function () {
 		{ label: `World Visits`, name: `wor_visits` },
 		{ label: `World Occupants`, name: `wor_occupants` },
 		{ label: `World Public Occupants`, name: `wor_publicOccupants` },
-		{ label: `World Private Occupants`, name: `wor_privateOccupants` }
+		{ label: `World Private Occupants`, name: `wor_privateOccupants` },
+		{ label: `Invite All`, name: `invite_all` },
+		{ label: `Invite Staff`, name: `invite_staff` },
+		{ label: `Invite Dancers`, name: `invite_dancer` },
+		{ label: `Invite VIPs`, name: `invite_vip` },
+		{ label: `Invite Guests`, name: `invite_guest` }
 	)
 
 	this.setVariableDefinitions(variables)
@@ -40,6 +45,7 @@ exports.updateVariables = function () {
 	let u = d.user
 	let i = d.instance
 	let w = d.world
+	let n = d.notifications
 
 	this.setVariable(`onlineUsers`, d.onlineUsers)
 	this.setVariable(`user_displayName`, u.displayName)
@@ -68,4 +74,9 @@ exports.updateVariables = function () {
 	this.setVariable(`wor_occupants`, w.occupants)
 	this.setVariable(`wor_publicOccupants`, w.publicOccupants)
 	this.setVariable(`wor_privateOccupants`, w.privateOccupants)
+	this.setVariable(`invite_all`, n.inviteCounts.all)
+	this.setVariable(`invite_staff`, n.inviteCounts.staff)
+	this.setVariable(`invite_dancer`, n.inviteCounts.dancer)
+	this.setVariable(`invite_vip`, n.inviteCounts.vip)
+	this.setVariable(`invite_guest`, n.inviteCounts.guest)
 }

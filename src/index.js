@@ -49,6 +49,15 @@ class instance extends instance_skel {
 				privateOccupants: 0,
 				occupants: 0,
 			},
+			notifications: {
+				inviteCounts: {
+					all: 0,
+					staff: 0,
+					dancer: 0,
+					vip: 0,
+					guest: 0,
+				},
+			},
 		}
 
 		this.configuration = new vrchat.Configuration({
@@ -205,6 +214,7 @@ class instance extends instance_skel {
 		this.InviteApi = new vrchat.InviteApi(this.configuration)
 		this.InstancesApi = new vrchat.InstancesApi(this.configuration)
 		this.WorldsApi = new vrchat.WorldsApi(this.configuration)
+		this.FriendsApi = new vrchat.FriendsApi(this.configuration)
 
 		if (this.config.username != '' && this.config.password != '' && this.config.apiKey != '') {
 			this.data = await this.login(this.data, this.configuration)
@@ -273,23 +283,6 @@ class instance extends instance_skel {
 
 	actions() {
 		this.setActions({
-			GetNotifications: {
-				label: 'Get Notifications',
-				description: 'Get notifications from VRChat, not super useful but nice for debugging',
-				options: [
-					{
-						type: 'number',
-						label: 'Max Notifications To Get',
-						id: 'maxNotifications',
-						default: 100,
-						min: 1,
-						max: 1000,
-					},
-				],
-			},
-			ClearAllNotifications: {
-				label: 'Clear All Notifications',
-			},
 			InviteUser: {
 				label: 'Invite User',
 				options: [
@@ -328,6 +321,39 @@ class instance extends instance_skel {
 				description: 'Gets all notifications and accept all "request invite" notifications',
 				options: [
 					{
+						type: 'number',
+						label: 'Max Notifications To Check',
+						id: 'maxNotifications',
+						default: 100,
+						min: 1,
+						max: 1000,
+					},
+					{
+						type: 'multiselect',
+						label: 'Count Invites Variable',
+						id: 'invCountType',
+						default: 'none',
+						choices: [
+							{ id: 'all', label: 'All / Total' },
+							{ id: 'staff', label: 'Staff' },
+							{ id: 'dancer', label: 'Dancers' },
+							{ id: 'vip', label: 'VIP / Patreon / Bosters' },
+							{ id: 'guest', label: 'Guests' },
+						],
+					},
+					{
+						type: 'checkbox',
+						label: 'Ignore Message',
+						id: 'ignoreMessage',
+						default: true,
+					},
+					{
+						type: 'textinput',
+						id: 'message',
+						label: 'Specific Request Message',
+						default: '',
+					},
+					{
 						type: 'dropdown',
 						label: 'Instance',
 						id: 'cmd',
@@ -348,14 +374,6 @@ class instance extends instance_skel {
 						id: 'instanceId',
 						label: 'Specific Instance ID',
 						default: '',
-					},
-					{
-						type: 'number',
-						label: 'Max Notifications To Check',
-						id: 'maxNotifications',
-						default: 100,
-						min: 1,
-						max: 100,
 					},
 				],
 			},
@@ -385,7 +403,7 @@ class instance extends instance_skel {
 						id: 'maxNotifications',
 						default: 100,
 						min: 1,
-						max: 100,
+						max: 1000,
 					},
 				],
 			},
@@ -464,6 +482,75 @@ class instance extends instance_skel {
 			GetCurentWorldInfo: {
 				label: 'Pull Current World Info',
 			},
+			GetFriends: {
+				label: 'Get Friends',
+				description: 'Get all friends from VRChat, not super useful but nice for debugging',
+				options: [
+					{
+						type: 'number',
+						label: 'Max Friends To Get',
+						id: 'maxFriends',
+						default: 100,
+						min: 1,
+						max: 1000,
+					},
+					{
+						type: 'dropdown',
+						label: 'Friend Status',
+						id: 'offline',
+						default: 'all',
+						choices: [
+							{ id: 'all', label: 'All' },
+							{ id: 'false', label: 'Online/Web' },
+							{ id: 'true', label: 'Offline' },
+						],
+					},
+				],
+			},
+			GetNotifications: {
+				label: 'Get Notifications',
+				description: 'Get notifications from VRChat, not super useful but nice for debugging',
+				options: [
+					{
+						type: 'number',
+						label: 'Max Notifications To Get',
+						id: 'maxNotifications',
+						default: 100,
+						min: 1,
+						max: 1000,
+					},
+				],
+			},
+			ClearAllNotifications: {
+				label: 'Clear All Notifications',
+			},
+			ClearInviteVariables: {
+				label: 'Clear Invite Variables',
+				description: 'Rest the invite variables to 0',
+				options: [
+					{
+						type: 'multiselect',
+						label: 'Variables to Clear',
+						id: 'invCountType',
+						default: 'all',
+						choices: [
+							{ id: 'all', label: 'All / Total' },
+							{ id: 'staff', label: 'Staff' },
+							{ id: 'dancer', label: 'Dancers' },
+							{ id: 'vip', label: 'VIP / Patreon / Bosters' },
+							{ id: 'guest', label: 'Guests' },
+						],
+					},
+					{
+						type: 'number',
+						label: 'Value to set',
+						id: 'value',
+						default: 0,
+						min: 0,
+						max: 100,
+					},
+				],
+			},
 		})
 	}
 
@@ -472,32 +559,6 @@ class instance extends instance_skel {
 		let instanceMessage = {}
 
 		switch (action.action) {
-			case 'GetNotifications':
-				for (let i = 0; i < opt.maxNotifications; i += 100) {
-					this.NotificationsApi.getNotifications(undefined, undefined, undefined, undefined, 100, i)
-						.then((resp) => {
-							console.log(resp.data)
-							this.log('info', 'Pulled Notifications, check console for details')
-						})
-						.catch((err) => {
-							this.log('error', err.message)
-						})
-
-					if (resp.data.length < 100) {
-						break
-					}
-				}
-				break
-			case 'ClearAllNotifications':
-				this.NotificationsApi.clearNotifications()
-					.then((resp) => {
-						this.debug(resp.data)
-						this.log('info', 'All Notifications Cleared')
-					})
-					.catch((err) => {
-						this.log('error', err.message)
-					})
-				break
 			case 'InviteUser':
 				if (opt.cmd == 'specific' && opt.worldId != '' && opt.instanceId != '') {
 					instanceMessage = {
@@ -542,27 +603,69 @@ class instance extends instance_skel {
 					}
 				}
 
+				let count = 0 // stores the number of invites accepted
+
 				for (let i = 0; i < opt.maxNotifications; i += 100) {
-					this.NotificationsApi.getNotifications(undefined, undefined, undefined, undefined, 100, i)
+					await this.NotificationsApi.getNotifications(undefined, undefined, undefined, undefined, 100, i)
 						.then((resp) => {
 							resp.data.forEach((notification) => {
 								if (notification.type === vrchat.NotificationType.RequestInvite) {
-									this.InviteApi.inviteUser(notification.senderUserId, instanceMessage)
-										.then((resp) => {
-											this.debug(resp.data)
-											this.log('info', 'Accepted Join Request From: ' + notification.senderUsername)
-											this.NotificationsApi.deleteNotification(notification.id) // Might not be needed
+									console.log(
+										notification.senderUserId,
+										' ',
+										notification.senderUsername,
+										' ',
+										JSON.parse(notification.details)
+									)
+
+									let optMessage = opt.message.toLowerCase()
+
+									if (optMessage != '' && opt.ignoreMessage == false && JSON.parse(notification.details).requestMessage != undefined) {
+										// specific message
+										let val = JSON.parse(notification.details)
+										let valMsg = val.requestMessage.toLowerCase()
+										if (valMsg == optMessage) {
+											count++
+											this.InviteApi.inviteUser(notification.senderUserId, instanceMessage)
 												.then((resp) => {
-													this.debug(resp.data)
+													// this.debug(resp.data)
+													this.log('info', 'Accepted Join Request From: ' + notification.senderUsername + ' ' + valMsg)
+													this.NotificationsApi.deleteNotification(notification.id) // Might not be needed
 												})
 												.catch((err) => {
-													this.debug(err.message)
+													this.log('error', err.message)
+													console.log(err)
 												})
-										})
-										.catch((err) => {
-											this.log('error', err.message)
-											console.log(err)
-										})
+										}
+									} else if (opt.ignoreMessage == false) {
+										// only with no message
+										if (notification.details == '{}') {
+											count++
+											this.InviteApi.inviteUser(notification.senderUserId, instanceMessage)
+												.then((resp) => {
+													// this.debug(resp.data)
+													this.log('info', 'Accepted Join Request From: ' + notification.senderUsername)
+													this.NotificationsApi.deleteNotification(notification.id) // Might not be needed
+												})
+												.catch((err) => {
+													this.log('error', err.message)
+													console.log(err)
+												})
+										}
+									} else {
+										// Any request
+										count++
+										this.InviteApi.inviteUser(notification.senderUserId, instanceMessage)
+											.then((resp) => {
+												// this.debug(resp.data)
+												this.log('info', 'Accepted Join Request From: ' + notification.senderUsername)
+												this.NotificationsApi.deleteNotification(notification.id) // Might not be needed
+											})
+											.catch((err) => {
+												this.log('error', err.message)
+												console.log(err)
+											})
+									}
 								}
 							})
 						})
@@ -570,6 +673,44 @@ class instance extends instance_skel {
 							this.log('error', err.message)
 						})
 				}
+
+				console.log('Invite Count: ' + count)
+
+				if (count > 0) {
+					let i = this.data.notifications.inviteCounts
+
+					opt.invCountType.forEach((invType) => {
+						switch (invType) {
+							case 'all':
+								this.log('info', 'Accepted ' + count + ' Join Requests, All Users')
+								i.all = count + i.all
+								break
+							case 'staff':
+								this.log('info', 'Accepted ' + count + ' Join Requests, Staff')
+								i.staff = count + i.staff
+								break
+							case 'dancer':
+								this.log('info', 'Accepted ' + count + ' Join Requests, Dancers')
+								i.dancer = count + i.dancer
+								break
+							case 'vip':
+								this.log('info', 'Accepted ' + count + ' Join Requests, VIPs')
+								i.vip = count + i.vip
+								break
+							case 'guest':
+								this.log('info', 'Accepted ' + count + ' Join Requests, Guests')
+								i.guest = count + i.guest
+								break
+
+							default:
+								this.log('info', 'Accepted ' + count + ' Join Requests')
+								break
+						}
+					})
+					console.log(this.data.notifications.inviteCounts)
+					this.updateVariables()
+				}
+
 				break
 			case 'AcceptAllFriendRequests':
 				for (let i = 0; i < opt.maxNotifications; i += 100) {
@@ -583,12 +724,6 @@ class instance extends instance_skel {
 												this.debug(resp.data)
 												this.log('info', 'Accepted Friend Request From: ' + notification.senderUsername)
 												this.NotificationsApi.deleteNotification(notification.id) // Might not be needed
-													.then((resp) => {
-														this.debug(resp.data)
-													})
-													.catch((err) => {
-														this.debug(err.message)
-													})
 											})
 											.catch((err) => {
 												this.log('error', err.message)
@@ -602,12 +737,6 @@ class instance extends instance_skel {
 										this.debug(resp.data)
 										this.log('info', 'Accepted Friend Request From: ' + notification.senderUsername)
 										this.NotificationsApi.deleteNotification(opt.notificationID) // Might not be needed
-											.then((resp) => {
-												this.debug(resp.data)
-											})
-											.catch((err) => {
-												this.debug(err.message)
-											})
 									})
 									.catch((err) => {
 										this.log('error', err.message)
@@ -714,6 +843,107 @@ class instance extends instance_skel {
 				this.data = await this.getWorldInfo(this.data)
 				this.log('info', 'Pulled Current User Info')
 				break
+			case 'GetFriends':
+				if (opt.offline == 'all') {
+					for (let i = 0; i < opt.maxFriends; i += 100) {
+						this.FriendsApi.getFriends(i, 100, false)
+							.then((resp) => {
+								resp.data.forEach((friend) => {
+									console.log(friend.id, ' ', friend.displayName, ' ', friend.status, '', friend.location)
+								})
+								this.log('info', 'Pulled Friends, check console for details')
+							})
+							.catch((err) => {
+								this.log('error', err.message)
+							})
+					}
+					for (let i = 0; i < opt.maxFriends; i += 100) {
+						this.FriendsApi.getFriends(i, 100, true)
+							.then((resp) => {
+								resp.data.forEach((friend) => {
+									console.log(friend.id, ' ', friend.displayName, ' ', friend.status, '', friend.location)
+								})
+								this.log('info', 'Pulled Friends, check console for details')
+							})
+							.catch((err) => {
+								this.log('error', err.message)
+							})
+					}
+				} else {
+					for (let i = 0; i < opt.maxFriends; i += 100) {
+						this.FriendsApi.getFriends(i, 100, opt.offline)
+							.then((resp) => {
+								resp.data.forEach((friend) => {
+									console.log(friend.id, ' ', friend.displayName, ' ', friend.status, '', friend.location)
+								})
+								this.log('info', 'Pulled Friends, check console for details')
+							})
+							.catch((err) => {
+								this.log('error', err.message)
+							})
+					}
+				}
+				break
+			case 'GetNotifications':
+				for (let i = 0; i < opt.maxNotifications; i += 100) {
+					this.NotificationsApi.getNotifications(undefined, undefined, undefined, undefined, 100, i)
+						.then((resp) => {
+							// console.log(resp.data)
+							resp.data.forEach((notification) => {
+								console.log(
+									notification.senderUserId,
+									' ',
+									notification.senderUsername,
+									' ',
+									notification.type,
+									'',
+									JSON.parse(notification.details)
+								)
+							})
+							this.log('info', 'Pulled Notifications, check console for details')
+						})
+						.catch((err) => {
+							this.log('error', err.message)
+						})
+				}
+				break
+			case 'ClearAllNotifications':
+				this.NotificationsApi.clearNotifications()
+					.then((resp) => {
+						this.debug(resp.data)
+						this.log('info', 'All Notifications Cleared')
+					})
+					.catch((err) => {
+						this.log('error', err.message)
+					})
+				break
+			case 'ClearInviteVariables': {
+				let i = this.data.notifications.inviteCounts
+
+				opt.invCountType.forEach(invType => {
+					switch (invType) {
+						case 'all':
+							i.all = opt.value
+							break
+						case 'staff':
+							i.staff = opt.value
+							break
+						case 'dancer':
+							i.dancer = opt.value
+							break
+						case 'vip':
+							i.vip = opt.value
+							break
+						case 'guest':
+							i.guest = opt.value
+							break
+
+						default:
+							break
+					}
+				});
+				console.log(this.data.notifications.inviteCounts)
+			}
 		}
 
 		this.updateVariables()
