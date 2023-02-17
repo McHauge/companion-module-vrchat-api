@@ -24,6 +24,6 @@
 		"url": "https://github.com/McHauge/companion-module-vrchat-api/issues"
 	},
 	"dependencies": {
-		"vrchat": "^1.7.7"
+		"vrchat": "^1.11.0"
 	}
 }

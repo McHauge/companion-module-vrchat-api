@@ -15,6 +15,8 @@ class instance extends instance_skel {
 		super(system, id, config)
 
 		this.data = {
+			login: false,
+			authType: [''],
 			onlineUsers: 0,
 			user: {
 				displayName: 'NaN',
@@ -96,16 +98,40 @@ class instance extends instance_skel {
 	}
 
 	async login(data, configuration) {
-		let resp_Login = await this.AuthenticationApi.getCurrentUser(configuration).catch((err) => {
-			this.log('error', err.message)
-			console.log(err)
-		})
-		data.user.name = resp_Login.data.username
-		data.user.displayName = resp_Login.data.displayName
-		data.user.id = resp_Login.data.id
-		data.user.status = resp_Login.data.status
-		data.user.statusDescription = resp_Login.data.statusDescription
+		await this.AuthenticationApi.getCurrentUser(configuration).then((resp_Login) => {
+			if (resp_Login.data.requiresTwoFactorAuth != null) {
+				resp_Login.data.requiresTwoFactorAuth.forEach((element) => {
+					switch (element) {
+						case 'emailOtp':
+							this.log('warn', 'Email 2FA Required')
+							console.log('Email 2FA Required')
+							break
+						case 'totp':
+							this.log('warn', 'Authenticator 2FA Required')
+							console.log('Authendicator 2FA Required')
+							break
+						default:
+							this.log('warn', 'Unknown 2FA Type Required')
+							console.log('Other 2FA Required')
+							break
+					}
+					this.data.authType = resp_Login.data.requiresTwoFactorAuth // store the Auth Type for later use
+					data.login = false
 
+					this.status(this.STATUS_ERROR, 'Missing 2FA Auth')
+					this.log('error', 'Please Send 2FA Action with the new valid code')
+					return data
+				})
+			} else if (resp_Login.data != null) {
+				console.log('Login Success')
+				data.login = true
+				data.user.name = resp_Login.data.username
+				data.user.displayName = resp_Login.data.displayName
+				data.user.id = resp_Login.data.id
+				data.user.status = resp_Login.data.status
+				data.user.statusDescription = resp_Login.data.statusDescription
+			}
+		})
 		return data
 	}
 
@@ -120,6 +146,9 @@ class instance extends instance_skel {
 	}
 
 	async getCurrentInstanceID(data) {
+		if (data.login == false) {
+			return data
+		}
 		let resp_User = await this.UsersApi.getUser(data.user.id).catch((err) => {
 			this.log('error', err.message)
 			console.log(err)
@@ -131,6 +160,9 @@ class instance extends instance_skel {
 	}
 
 	async getInstanceInfo(data) {
+		if (data.login == false) {
+			return data
+		}
 		if (
 			data.instance.worldId == 'NaN' ||
 			data.instance.instanceId == 'NaN' ||
@@ -165,6 +197,9 @@ class instance extends instance_skel {
 	}
 
 	async getWorldInfo(data) {
+		if (data.login == false) {
+			return data
+		}
 		if (data.user.state === 'offline' || data.instance.worldId == 'offline') {
 			return data
 		}
@@ -206,7 +241,7 @@ class instance extends instance_skel {
 		// this.init_feedbacks()
 		// initPresets.bind(this)()
 		this.updateVariableDefinitions()
-
+		// vrchat.AuthenticationApiFp
 		this.AuthenticationApi = new vrchat.AuthenticationApi(this.configuration)
 		this.UsersApi = new vrchat.UsersApi(this.configuration)
 		this.SystemApi = new vrchat.SystemApi(this.configuration)
@@ -217,14 +252,20 @@ class instance extends instance_skel {
 		this.FriendsApi = new vrchat.FriendsApi(this.configuration)
 
 		if (this.config.username != '' && this.config.password != '' && this.config.apiKey != '') {
-			this.data = await this.login(this.data, this.configuration)
 			this.data = await this.getCurrentOnlineUsers(this.data, this.configuration)
-			this.data = await this.getCurrentInstanceID(this.data)
-			this.data = await this.getInstanceInfo(this.data)
-			this.data = await this.getWorldInfo(this.data)
-			this.status(this.STATE_OK)
-			this.updateVariables()
-			this.log('info', 'Logged in as ' + this.data.user.name)
+			this.data = await this.login(this.data, this.configuration)
+
+			if (this.data.login == true) {
+				this.data = await this.getCurrentInstanceID(this.data)
+				this.data = await this.getInstanceInfo(this.data)
+				this.data = await this.getWorldInfo(this.data)
+				this.status(this.STATE_OK)
+				this.updateVariables()
+				this.log('info', 'Logged in as ' + this.data.user.name)
+			} else {
+				this.log('error', 'Error Logging In')
+				console.log('Error Logging In')
+			}
 			console.log(this.data)
 		} else {
 			this.log('error', 'Username, Password or API Key is missing')
@@ -551,12 +592,112 @@ class instance extends instance_skel {
 					},
 				],
 			},
+			Send2FACode: {
+				label: 'Send 2FA Code',
+				description: 'Send 2FA code, can be E-mail, Authenticator or Recovery Code.',
+				options: [
+					{
+						type: 'textinput',
+						id: 'code',
+						label: '2FA Code',
+						default: '',
+					},
+				],
+			}
 		})
 	}
 
 	async action(action) {
 		var opt = action.options
 		let instanceMessage = {}
+
+		if (action.action == 'Send2FACode' && this.data.login == false) {
+			let rawCode = {
+				code: opt.code,
+			}
+
+			if (this.data.authType != []) {
+				this.data.authType.forEach((element) => {
+					if (this.data.login == true) {
+						this.log('Info', 'Already Logged In')
+						console.log('Already Logged In')
+						return
+					}
+					if (rawCode.code == '') {
+						this.log('warn', 'Missing 2FA Code')
+						console.log('Missing 2FA Code')
+						this.data.login = false
+					}
+					switch (element) {
+						case 'emailOtp':
+							this.log('warn', 'Email 2FA Required')
+							console.log('Email 2FA Required')
+							this.AuthenticationApi.verify2FAEmailCode(rawCode, this.configuration).catch((err) => {
+								console.log("Wrong Code")
+								console.log(err)
+							}).then((resp) => {
+								console.log(resp.data)
+								if (resp.data.verified == true) {
+									console.log("Logged In")
+									this.data.login = true
+									this.status(this.STATUS_OK, 'Logged In')
+									this.log('info', 'Logged In')
+									this.init()
+								}
+							})
+							break
+						case 'totp':
+							this.log('warn', 'Authenticator 2FA Required')
+							console.log('Authendicator 2FA Required')
+							this.AuthenticationApi.verify2FA(rawCode, this.configuration).catch((err) => {
+								console.log("Wrong Code")
+								console.log(err)
+							}).then((resp) => {
+								console.log(resp.data)
+								if (resp.data.verified == true) {
+									console.log("Logged In")
+									this.data.login = true
+									this.status(this.STATUS_OK, 'Logged In')
+									this.log('info', 'Logged In')
+									this.init()
+								}
+							})
+							break
+						default:
+							this.log('warn', 'Unknown 2FA Type Required')
+							console.log('Other 2FA Required')
+							this.AuthenticationApi.verifyRecoveryCode(rawCode, this.configuration).catch((err) => {
+								console.log("Wrong Code")
+								console.log(err)
+							}).then((resp) => {
+								console.log(resp.data)
+								if (resp.data.verified == true) {
+									console.log("Logged In")
+									this.data.login = true
+									this.status(this.STATUS_OK, 'Logged In')
+									this.log('info', 'Logged In')
+									this.init()
+								}
+							})
+							break
+					}
+				})
+			}
+			this.updateVariables()
+			return
+		} else if (action.action == 'Send2FACode' && this.data.login == true) {
+			this.log('warn', 'Already Logged In: 2FA Code Not Sent')
+			console.log('Already Logged In')
+			this.updateVariables()
+			return
+		}
+
+		// Check if logged in
+		if (this.data.login == false) {
+			this.log('warn', 'Not Logged In: Action Aborted')
+			this.updateVariables()
+			return
+		}
 
 		switch (action.action) {
 			case 'InviteUser':
@@ -620,7 +761,11 @@ class instance extends instance_skel {
 
 									let optMessage = opt.message.toLowerCase()
 
-									if (optMessage != '' && opt.ignoreMessage == false && JSON.parse(notification.details).requestMessage != undefined) {
+									if (
+										optMessage != '' &&
+										opt.ignoreMessage == false &&
+										JSON.parse(notification.details).requestMessage != undefined
+									) {
 										// specific message
 										let val = JSON.parse(notification.details)
 										let valMsg = val.requestMessage.toLowerCase()
@@ -917,10 +1062,10 @@ class instance extends instance_skel {
 						this.log('error', err.message)
 					})
 				break
-			case 'ClearInviteVariables': {
+			case 'ClearInviteVariables':
 				let i = this.data.notifications.inviteCounts
 
-				opt.invCountType.forEach(invType => {
+				opt.invCountType.forEach((invType) => {
 					switch (invType) {
 						case 'all':
 							i.all = opt.value
@@ -941,9 +1086,9 @@ class instance extends instance_skel {
 						default:
 							break
 					}
-				});
+				})
 				console.log(this.data.notifications.inviteCounts)
-			}
+				break
 		}
 
 		this.updateVariables()

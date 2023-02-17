@@ -2,6 +2,7 @@ exports.updateVariableDefinitions = function () {
 	const variables = []
 
 	variables.push(
+		{ label: `Logged In`, name: `loggedIn` },
 		{ label: `Online Users`, name: `onlineUsers` },
 		{ label: `Display Name`, name: `user_displayName` },
 		{ label: `User Name`, name: `user_name` },
@@ -47,6 +48,7 @@ exports.updateVariables = function () {
 	let w = d.world
 	let n = d.notifications
 
+	this.setVariable(`loggedIn`, d.login)
 	this.setVariable(`onlineUsers`, d.onlineUsers)
 	this.setVariable(`user_displayName`, u.displayName)
 	this.setVariable(`user_name`, u.name)
