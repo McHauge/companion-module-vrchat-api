@@ -123,7 +123,7 @@ class instance extends instance_skel {
 					return data
 				})
 			} else if (resp_Login.data != null) {
-				console.log('Login Success')
+				// console.log('Login Success')
 				data.login = true
 				data.user.name = resp_Login.data.username
 				data.user.displayName = resp_Login.data.displayName
@@ -262,6 +262,7 @@ class instance extends instance_skel {
 				this.status(this.STATE_OK)
 				this.updateVariables()
 				this.log('info', 'Logged in as ' + this.data.user.name)
+				console.log('Logged in as ' + this.data.user.name)
 			} else {
 				this.log('error', 'Error Logging In')
 				console.log('Error Logging In')
@@ -603,7 +604,7 @@ class instance extends instance_skel {
 						default: '',
 					},
 				],
-			}
+			},
 		})
 	}
 
@@ -632,53 +633,59 @@ class instance extends instance_skel {
 						case 'emailOtp':
 							this.log('warn', 'Email 2FA Required')
 							console.log('Email 2FA Required')
-							this.AuthenticationApi.verify2FAEmailCode(rawCode, this.configuration).catch((err) => {
-								console.log("Wrong Code")
-								console.log(err)
-							}).then((resp) => {
-								console.log(resp.data)
-								if (resp.data.verified == true) {
-									console.log("Logged In")
-									this.data.login = true
-									this.status(this.STATUS_OK, 'Logged In')
-									this.log('info', 'Logged In')
-									this.init()
-								}
-							})
+							this.AuthenticationApi.verify2FAEmailCode(rawCode, this.configuration)
+								.catch((err) => {
+									console.log('Wrong Code')
+									console.log(err)
+								})
+								.then((resp) => {
+									console.log(resp.data)
+									if (resp.data.verified == true) {
+										console.log('Logged In')
+										this.data.login = true
+										this.status(this.STATUS_OK, 'Logged In')
+										this.log('info', 'Logged In')
+										this.init()
+									}
+								})
 							break
 						case 'totp':
 							this.log('warn', 'Authenticator 2FA Required')
 							console.log('Authendicator 2FA Required')
-							this.AuthenticationApi.verify2FA(rawCode, this.configuration).catch((err) => {
-								console.log("Wrong Code")
-								console.log(err)
-							}).then((resp) => {
-								console.log(resp.data)
-								if (resp.data.verified == true) {
-									console.log("Logged In")
-									this.data.login = true
-									this.status(this.STATUS_OK, 'Logged In')
-									this.log('info', 'Logged In')
-									this.init()
-								}
-							})
+							this.AuthenticationApi.verify2FA(rawCode, this.configuration)
+								.catch((err) => {
+									console.log('Wrong Code')
+									console.log(err)
+								})
+								.then((resp) => {
+									console.log(resp.data)
+									if (resp.data.verified == true) {
+										console.log('Logged In')
+										this.data.login = true
+										this.status(this.STATUS_OK, 'Logged In')
+										this.log('info', 'Logged In')
+										this.init()
+									}
+								})
 							break
 						default:
 							this.log('warn', 'Unknown 2FA Type Required')
 							console.log('Other 2FA Required')
-							this.AuthenticationApi.verifyRecoveryCode(rawCode, this.configuration).catch((err) => {
-								console.log("Wrong Code")
-								console.log(err)
-							}).then((resp) => {
-								console.log(resp.data)
-								if (resp.data.verified == true) {
-									console.log("Logged In")
-									this.data.login = true
-									this.status(this.STATUS_OK, 'Logged In')
-									this.log('info', 'Logged In')
-									this.init()
-								}
-							})
+							this.AuthenticationApi.verifyRecoveryCode(rawCode, this.configuration)
+								.catch((err) => {
+									console.log('Wrong Code')
+									console.log(err)
+								})
+								.then((resp) => {
+									console.log(resp.data)
+									if (resp.data.verified == true) {
+										console.log('Logged In')
+										this.data.login = true
+										this.status(this.STATUS_OK, 'Logged In')
+										this.log('info', 'Logged In')
+										this.init()
+									}
+								})
 							break
 					}
 				})
@@ -747,44 +754,66 @@ class instance extends instance_skel {
 				let count = 0 // stores the number of invites accepted
 
 				for (let i = 0; i < opt.maxNotifications; i += 100) {
+					let a = i
 					await this.NotificationsApi.getNotifications(undefined, undefined, undefined, undefined, 100, i)
 						.then((resp) => {
 							resp.data.forEach((notification) => {
-								if (notification.type === vrchat.NotificationType.RequestInvite) {
-									console.log(
-										notification.senderUserId,
-										' ',
-										notification.senderUsername,
-										' ',
-										JSON.parse(notification.details)
-									)
+								if (a >= opt.maxNotifications) {
+									return
+								} else {
+									a++
+									if (notification.type === vrchat.NotificationType.RequestInvite) {
+										console.log(
+											notification.senderUserId,
+											' ',
+											notification.senderUsername,
+											' ',
+											JSON.parse(notification.details)
+										)
 
-									let optMessage = opt.message.toLowerCase()
+										let optMessage = opt.message.toLowerCase()
 
-									if (
-										optMessage != '' &&
-										opt.ignoreMessage == false &&
-										JSON.parse(notification.details).requestMessage != undefined
-									) {
-										// specific message
-										let val = JSON.parse(notification.details)
-										let valMsg = val.requestMessage.toLowerCase()
-										if (valMsg == optMessage) {
-											count++
-											this.InviteApi.inviteUser(notification.senderUserId, instanceMessage)
-												.then((resp) => {
-													// this.debug(resp.data)
-													this.log('info', 'Accepted Join Request From: ' + notification.senderUsername + ' ' + valMsg)
-													this.NotificationsApi.deleteNotification(notification.id) // Might not be needed
-												})
-												.catch((err) => {
-													this.log('error', err.message)
-													console.log(err)
-												})
-										}
-									} else if (opt.ignoreMessage == false) {
-										// only with no message
-										if (notification.details == '{}') {
+										if (
+											optMessage != '' &&
+											opt.ignoreMessage == false &&
+											JSON.parse(notification.details).requestMessage != undefined
+										) {
+											// specific message
+											let val = JSON.parse(notification.details)
+											let valMsg = val.requestMessage.toLowerCase()
+											if (valMsg == optMessage) {
+												count++
+												this.InviteApi.inviteUser(notification.senderUserId, instanceMessage)
+													.then((resp) => {
+														// this.debug(resp.data)
+														this.log(
+															'info',
+															'Accepted Join Request From: ' + notification.senderUsername + ' ' + valMsg
+														)
+														this.NotificationsApi.deleteNotification(notification.id) // Might not be needed
+													})
+													.catch((err) => {
+														this.log('error', err.message)
+														console.log(err)
+													})
+											}
+										} else if (opt.ignoreMessage == false) {
+											// only with no message
+											if (notification.details == '{}') {
+												count++
+												this.InviteApi.inviteUser(notification.senderUserId, instanceMessage)
+													.then((resp) => {
+														// this.debug(resp.data)
+														this.log('info', 'Accepted Join Request From: ' + notification.senderUsername)
+														this.NotificationsApi.deleteNotification(notification.id) // Might not be needed
+													})
+													.catch((err) => {
+														this.log('error', err.message)
+														console.log(err)
+													})
+											}
+										} else {
+											// Any request
 											count++
 											this.InviteApi.inviteUser(notification.senderUserId, instanceMessage)
 												.then((resp) => {
@@ -797,19 +826,6 @@ class instance extends instance_skel {
 													console.log(err)
 												})
 										}
-									} else {
-										// Any request
-										count++
-										this.InviteApi.inviteUser(notification.senderUserId, instanceMessage)
-											.then((resp) => {
-												// this.debug(resp.data)
-												this.log('info', 'Accepted Join Request From: ' + notification.senderUsername)
-												this.NotificationsApi.deleteNotification(notification.id) // Might not be needed
-											})
-											.catch((err) => {
-												this.log('error', err.message)
-												console.log(err)
-											})
 									}
 								}
 							})
@@ -859,21 +875,27 @@ class instance extends instance_skel {
 				break
 			case 'AcceptAllFriendRequests':
 				for (let i = 0; i < opt.maxNotifications; i += 100) {
+					let a = i
 					this.NotificationsApi.getNotifications(undefined, undefined, undefined, undefined, 100, i)
 						.then((resp) => {
 							if (opt.cmd === 'all') {
 								resp.data.forEach((notification) => {
-									if (notification.type === vrchat.NotificationType.FriendRequest) {
-										this.NotificationsApi.acceptFriendRequest(notification.id)
-											.then((resp) => {
-												this.debug(resp.data)
-												this.log('info', 'Accepted Friend Request From: ' + notification.senderUsername)
-												this.NotificationsApi.deleteNotification(notification.id) // Might not be needed
-											})
-											.catch((err) => {
-												this.log('error', err.message)
-												console.log(err)
-											})
+									if (a >= opt.maxNotifications) {
+										return
+									} else {
+										a++
+										if (notification.type === vrchat.NotificationType.FriendRequest) {
+											this.NotificationsApi.acceptFriendRequest(notification.id)
+												.then((resp) => {
+													this.debug(resp.data)
+													this.log('info', 'Accepted Friend Request From: ' + notification.senderUsername)
+													this.NotificationsApi.deleteNotification(notification.id) // Might not be needed
+												})
+												.catch((err) => {
+													this.log('error', err.message)
+													console.log(err)
+												})
+										}
 									}
 								})
 							} else if (opt.cmd === 'specific') {
