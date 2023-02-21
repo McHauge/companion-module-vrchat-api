@@ -783,6 +783,7 @@ class instance extends instance_skel {
 											let valMsg = val.requestMessage.toLowerCase()
 											if (valMsg == optMessage) {
 												count++
+												console.log('Matched Message ' + optMessage + ' ' + notification.senderUsername)
 												this.InviteApi.inviteUser(notification.senderUserId, instanceMessage)
 													.then((resp) => {
 														// this.debug(resp.data)
@@ -797,9 +798,10 @@ class instance extends instance_skel {
 														console.log(err)
 													})
 											}
-										} else if (opt.ignoreMessage == false) {
+										} else if (optMessage == '' && opt.ignoreMessage == false) {
 											// only with no message
 											if (notification.details == '{}') {
+												console.log('Matched Message {} ' + notification.senderUsername)
 												count++
 												this.InviteApi.inviteUser(notification.senderUserId, instanceMessage)
 													.then((resp) => {
@@ -812,7 +814,7 @@ class instance extends instance_skel {
 														console.log(err)
 													})
 											}
-										} else {
+										} else if (opt.ignoreMessage == true) {
 											// Any request
 											count++
 											this.InviteApi.inviteUser(notification.senderUserId, instanceMessage)
