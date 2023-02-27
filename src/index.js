@@ -250,6 +250,7 @@ class instance extends instance_skel {
 		this.InstancesApi = new vrchat.InstancesApi(this.configuration)
 		this.WorldsApi = new vrchat.WorldsApi(this.configuration)
 		this.FriendsApi = new vrchat.FriendsApi(this.configuration)
+		this.GroupsApi = new vrchat.GroupsApi(this.configuration)
 
 		if (this.config.username != '' && this.config.password != '' && this.config.apiKey != '') {
 			this.data = await this.getCurrentOnlineUsers(this.data, this.configuration)
@@ -549,6 +550,40 @@ class instance extends instance_skel {
 					},
 				],
 			},
+			GetGroupJoinRequest: {
+				label: 'Get Group Request Notifications',
+				description: 'Get Gropup Request notifications from VRChat, not super useful but nice for debugging',
+				options: [
+					{
+						type: 'textinput',
+						id: 'groupID',
+						label: 'Group ID',
+						default: '',
+					},
+				],
+			},
+			RespondGroupJoinRequest: {
+				label: 'Respond To Group Join Request',
+				description: 'Respond To Group Join Request from VRChat',
+				options: [
+					{
+						type: 'textinput',
+						id: 'groupID',
+						label: 'Group ID',
+						default: '',
+					},
+					{
+						type: 'dropdown',
+						label: 'Respond',
+						id: 'resp',
+						default: 'accept',
+						choices: [
+							{ id: 'accept', label: 'Accept Requests' },
+							{ id: 'deny', label: 'Deny Requests' },
+						],
+					},
+				],
+			},
 			GetNotifications: {
 				label: 'Get Notifications',
 				description: 'Get notifications from VRChat, not super useful but nice for debugging',
@@ -706,6 +741,8 @@ class instance extends instance_skel {
 			return
 		}
 
+		let count = 0 // stores the number of invites accepted
+
 		switch (action.action) {
 			case 'InviteUser':
 				if (opt.cmd == 'specific' && opt.worldId != '' && opt.instanceId != '') {
@@ -751,7 +788,7 @@ class instance extends instance_skel {
 					}
 				}
 
-				let count = 0 // stores the number of invites accepted
+				count = 0 // stores the number of invites accepted
 
 				for (let i = 0; i < opt.maxNotifications; i += 100) {
 					let a = i
@@ -1052,6 +1089,48 @@ class instance extends instance_skel {
 							})
 					}
 				}
+				break
+			case 'GetGroupJoinRequest':
+				console.log('Get Group Join Requests:')
+				console.log('UserID', ' ', 'UserName', ' ', 'NotificationID')
+				this.GroupsApi.getGroupRequests(opt.groupID)
+					.then((resp) => {
+						resp.data.forEach((notification) => {
+							console.log(notification.user.id, ' ', notification.user.displayName, ' ', notification.id)
+						})
+						this.log('info', 'Pulled Group Notifications, check console for details')
+					})
+					.catch((err) => {
+						this.log('error', err.message)
+					})
+				break
+			case 'RespondGroupJoinRequest':
+				console.log('Get Group Join Requests:')
+				console.log('UserID', ' ', 'UserName', ' ', 'NotificationID')
+				this.GroupsApi.getGroupRequests(opt.groupID)
+					.then((resp) => {
+						resp.data.forEach((notification) => {
+							console.log(notification.userId, ' ', notification.user.displayName, ' ', notification.id)
+							if (notification.groupId === opt.groupID) {
+								let response = {
+									action: opt.resp,
+								}
+
+								this.GroupsApi.respondGroupJoinRequest(opt.groupID, notification.userId, response)
+									.then((resp) => {
+										this.debug(resp.data)
+										this.log('info', 'Accepted Group Join Request From: ' + notification.user.displayName)
+									})
+									.catch((err) => {
+										this.log('error', err.message)
+										console.log(err)
+									})
+							}
+						})
+					})
+					.catch((err) => {
+						this.log('error', err.message)
+					})
 				break
 			case 'GetNotifications':
 				for (let i = 0; i < opt.maxNotifications; i += 100) {
