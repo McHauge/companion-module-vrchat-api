@@ -839,7 +839,7 @@ class instance extends instance_skel {
 											// specific message
 											let val = JSON.parse(notification.details)
 											let valMsg = val.requestMessage.toLowerCase()
-											if (valMsg == optMessage) {
+											if (valMsg.includes(optMessage)) {
 												count++
 												console.log('Matched Message ' + optMessage + ' ' + notification.senderUsername)
 												this.InviteApi.inviteUser(notification.senderUserId, instanceMessage)
@@ -1140,7 +1140,10 @@ class instance extends instance_skel {
 								this.GroupsApi.respondGroupJoinRequest(opt.groupID, notification.userId, response)
 									.then((resp) => {
 										this.debug(resp.data)
-										this.log('info', 'Accepted Group Join Request From: ' + notification.user.displayName)
+										this.log(
+											'info',
+											'Answered Group Join Request From: ' + notification.user.displayName + ' With:' + opt.resp
+										)
 									})
 									.catch((err) => {
 										this.log('error', err.message)
