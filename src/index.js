@@ -66,6 +66,11 @@ class instance extends instance_skel {
 			username: this.config.username,
 			password: this.config.password,
 			apiKey: this.config.apiKey,
+			baseOptions: {
+				headers: {
+					'User-Agent': 'Mozilla/5.0',
+				},
+			},
 		})
 
 		// Custom Variables Handling
@@ -92,46 +97,60 @@ class instance extends instance_skel {
 			username: this.config.username,
 			password: this.config.password,
 			apiKey: this.config.apiKey,
+			baseOptions: {
+				headers: {
+					'User-Agent': 'Mozilla/5.0',
+				},
+			},
 		})
 
 		this.init()
 	}
 
 	async login(data, configuration) {
-		await this.AuthenticationApi.getCurrentUser(configuration).then((resp_Login) => {
-			if (resp_Login.data.requiresTwoFactorAuth != null) {
-				resp_Login.data.requiresTwoFactorAuth.forEach((element) => {
-					switch (element) {
-						case 'emailOtp':
-							this.log('warn', 'Email 2FA Required')
-							console.log('Email 2FA Required')
-							break
-						case 'totp':
-							this.log('warn', 'Authenticator 2FA Required')
-							console.log('Authendicator 2FA Required')
-							break
-						default:
-							this.log('warn', 'Unknown 2FA Type Required')
-							console.log('Other 2FA Required')
-							break
-					}
-					this.data.authType = resp_Login.data.requiresTwoFactorAuth // store the Auth Type for later use
-					data.login = false
+		await this.AuthenticationApi.getCurrentUser(configuration).then(
+			(resp_Login) => {
+				if (resp_Login.data.requiresTwoFactorAuth != null) {
+					resp_Login.data.requiresTwoFactorAuth.forEach((element) => {
+						switch (element) {
+							case 'emailOtp':
+								this.log('warn', 'Email 2FA Required')
+								console.log('Email 2FA Required')
+								break
+							case 'totp':
+								this.log('warn', 'Authenticator 2FA Required')
+								console.log('Authendicator 2FA Required')
+								break
+							default:
+								this.log('warn', 'Unknown 2FA Type Required')
+								console.log('Other 2FA Required')
+								break
+						}
+						this.data.authType = resp_Login.data.requiresTwoFactorAuth // store the Auth Type for later use
+						data.login = false
 
-					this.status(this.STATUS_ERROR, 'Missing 2FA Auth')
-					this.log('error', 'Please Send 2FA Action with the new valid code')
-					return data
-				})
-			} else if (resp_Login.data != null) {
-				// console.log('Login Success')
-				data.login = true
-				data.user.name = resp_Login.data.username
-				data.user.displayName = resp_Login.data.displayName
-				data.user.id = resp_Login.data.id
-				data.user.status = resp_Login.data.status
-				data.user.statusDescription = resp_Login.data.statusDescription
-			}
-		})
+						this.status(this.STATUS_ERROR, 'Missing 2FA Auth')
+						this.log('error', 'Please Send 2FA Action with the new valid code')
+						return data
+					})
+				} else if (resp_Login.data != null) {
+					console.log('Login Success')
+					data.login = true
+					data.user.name = resp_Login.data.username
+					data.user.displayName = resp_Login.data.displayName
+					data.user.id = resp_Login.data.id
+					data.user.status = resp_Login.data.status
+					data.user.statusDescription = resp_Login.data.statusDescription
+				}
+			},
+			// (err) => {
+			// 	this.log('error', err.message)
+			// 	console.log(err)
+			// 	data.login = false
+			// 	this.status(this.STATUS_ERROR, 'Login Failed')
+			// 	console.log(err.response.data)
+			// }
+		)
 		return data
 	}
 
@@ -241,7 +260,6 @@ class instance extends instance_skel {
 		// this.init_feedbacks()
 		// initPresets.bind(this)()
 		this.updateVariableDefinitions()
-		// vrchat.AuthenticationApiFp
 		this.AuthenticationApi = new vrchat.AuthenticationApi(this.configuration)
 		this.UsersApi = new vrchat.UsersApi(this.configuration)
 		this.SystemApi = new vrchat.SystemApi(this.configuration)
@@ -251,6 +269,8 @@ class instance extends instance_skel {
 		this.WorldsApi = new vrchat.WorldsApi(this.configuration)
 		this.FriendsApi = new vrchat.FriendsApi(this.configuration)
 		this.GroupsApi = new vrchat.GroupsApi(this.configuration)
+
+		console.log(this.configuration)
 
 		if (this.config.username != '' && this.config.password != '' && this.config.apiKey != '') {
 			this.data = await this.getCurrentOnlineUsers(this.data, this.configuration)
@@ -663,65 +683,66 @@ class instance extends instance_skel {
 						this.log('warn', 'Missing 2FA Code')
 						console.log('Missing 2FA Code')
 						this.data.login = false
-					}
-					switch (element) {
-						case 'emailOtp':
-							this.log('warn', 'Email 2FA Required')
-							console.log('Email 2FA Required')
-							this.AuthenticationApi.verify2FAEmailCode(rawCode, this.configuration)
-								.catch((err) => {
-									console.log('Wrong Code')
-									console.log(err)
-								})
-								.then((resp) => {
-									console.log(resp.data)
-									if (resp.data.verified == true) {
-										console.log('Logged In')
-										this.data.login = true
-										this.status(this.STATUS_OK, 'Logged In')
-										this.log('info', 'Logged In')
-										this.init()
-									}
-								})
-							break
-						case 'totp':
-							this.log('warn', 'Authenticator 2FA Required')
-							console.log('Authendicator 2FA Required')
-							this.AuthenticationApi.verify2FA(rawCode, this.configuration)
-								.catch((err) => {
-									console.log('Wrong Code')
-									console.log(err)
-								})
-								.then((resp) => {
-									console.log(resp.data)
-									if (resp.data.verified == true) {
-										console.log('Logged In')
-										this.data.login = true
-										this.status(this.STATUS_OK, 'Logged In')
-										this.log('info', 'Logged In')
-										this.init()
-									}
-								})
-							break
-						default:
-							this.log('warn', 'Unknown 2FA Type Required')
-							console.log('Other 2FA Required')
-							this.AuthenticationApi.verifyRecoveryCode(rawCode, this.configuration)
-								.catch((err) => {
-									console.log('Wrong Code')
-									console.log(err)
-								})
-								.then((resp) => {
-									console.log(resp.data)
-									if (resp.data.verified == true) {
-										console.log('Logged In')
-										this.data.login = true
-										this.status(this.STATUS_OK, 'Logged In')
-										this.log('info', 'Logged In')
-										this.init()
-									}
-								})
-							break
+					} else {
+						switch (element) {
+							case 'emailOtp':
+								this.log('warn', 'Email 2FA Required')
+								console.log('Email 2FA Required')
+								this.AuthenticationApi.verify2FAEmailCode(rawCode, this.configuration)
+									.catch((err) => {
+										console.log('Wrong Code')
+										console.log(err)
+									})
+									.then((resp) => {
+										console.log(resp.data)
+										if (resp.data.verified == true) {
+											console.log('Logged In')
+											this.data.login = true
+											this.status(this.STATUS_OK, 'Logged In')
+											this.log('info', 'Logged In')
+											this.init()
+										}
+									})
+								break
+							case 'totp':
+								this.log('warn', 'Authenticator 2FA Required')
+								console.log('Authendicator 2FA Required')
+								this.AuthenticationApi.verify2FA(rawCode, this.configuration)
+									.catch((err) => {
+										console.log('Wrong Code')
+										console.log(err)
+									})
+									.then((resp) => {
+										console.log(resp.data)
+										if (resp.data.verified == true) {
+											console.log('Logged In')
+											this.data.login = true
+											this.status(this.STATUS_OK, 'Logged In')
+											this.log('info', 'Logged In')
+											this.init()
+										}
+									})
+								break
+							default:
+								this.log('warn', 'Unknown 2FA Type Required')
+								console.log('Other 2FA Required')
+								this.AuthenticationApi.verifyRecoveryCode(rawCode, this.configuration)
+									.catch((err) => {
+										console.log('Wrong Code')
+										console.log(err)
+									})
+									.then((resp) => {
+										console.log(resp.data)
+										if (resp.data.verified == true) {
+											console.log('Logged In')
+											this.data.login = true
+											this.status(this.STATUS_OK, 'Logged In')
+											this.log('info', 'Logged In')
+											this.init()
+										}
+									})
+								break
+						}
 					}
 				})
 			}
