@@ -1131,13 +1131,13 @@ class instance extends instance_skel {
 				this.GroupsApi.getGroupRequests(opt.groupID)
 					.then((resp) => {
 						resp.data.forEach((notification) => {
-							console.log(notification.userId, ' ', notification.user.displayName, ' ', notification.id)
+							console.log(notification.user.id, ' ', notification.user.displayName, ' ', notification.id)
 							if (notification.groupId === opt.groupID) {
 								let response = {
 									action: opt.resp,
 								}
 
-								this.GroupsApi.respondGroupJoinRequest(opt.groupID, notification.userId, response)
+								this.GroupsApi.respondGroupJoinRequest(opt.groupID, notification.user.id, response)
 									.then((resp) => {
 										this.debug(resp.data)
 										this.log(
